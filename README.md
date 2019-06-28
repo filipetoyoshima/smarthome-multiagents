@@ -1,6 +1,25 @@
-# Modelando Agentes
+# SIMULADOR DE AUTOMAÇÃO RESIDENCIAL 
 
-Agentes inteligentes (autonomia, cooperação, aprendizado): Agente de sensores(reativos), de saída elétrica (reativos), de ar-condicionado(reativos), lâmpada (reativos), Luminosidade(proativo), presença (proativa e reativa).
+Este repositório contém todo o código necessário para simular a automação residencial de uma kitnet, com os seguintes cômodos:
+
+- 1 quarto de 16 metros quadrados;
+- 1 cozinha 8 metros quadrados;
+- 1 sala 25 metros quadrados;
+- 1 banheiro 4 metros quadrados e;
+- 2 portas 82 cm de largura e 2,10 m.
+
+Pretende-se, a partir disso, permitir através do uso de clicks em diferentes locais dos cômodos da casa, as seguintes funções : 
+
+1. Ao entrar num ambiente escuro, a luz acende;
+2. Quando temperatura estiver acima de 20 graus, o ar-condicionado liga em 17 graus, caso o dono esteja em casa;
+3. Caso o usuário diga "fecha", as cortinas da sala fecham;
+4. Ao usuário se aproximar de uma porta, a porta se abre;
+5. Para desligar a luz, é preciso que o usuário peça em voz alta "desligue";
+6. Caso algum equipamento estrague, ele envia msg para pessoa (2 anos de uso);
+
+## MODELANDO AGENTES
+
+Para a modelagem, consideramos o uso de agentes inteligentes, considerando os princípios de autonomia, cooperação e aprendizado. Basicamente existirão 6 agentes: Agente de sensores(reativos), saída elétrica (reativos), ar-condicionado(reativos), lâmpada (reativos), Luminosidade(proativo) e presença (proativa e reativa).
 
 ## Descrição
 
@@ -40,12 +59,10 @@ Agentes inteligentes (autonomia, cooperação, aprendizado): Agente de sensores(
 * Estado: Detecta proximidade de pessoa da porta, podendo ter ou não alguém presente.
 * Comportamento: Ao detectar presença de alguém, envia sinal para a porta <VER SE FAZ A PORTA FICAR CONSULTANDO SENSOR DE PROXIMIDADE>
 
-- Kitnet automatizada: 1 quarto, 1 sala, 1 cozinha, 1 banheiro, 1 portão, 2 portas.
+## Referências
 
-## Funções do sistema
 
-1. Ao entrar num ambiente escuro, a luz acende.
-2. Quando temperatura estiver acima de 20 graus, o ar-condicionado liga em 17 graus.
-3. Presença aciona abertura do portão pelo celular, portão destranca.
-4. Em casos de grande luminosidade, as cortinas fecham.
-5. Ao usuário se aproximar de uma porta, a porta se abre.
+ZAOUALI, Kalthoum et al.Smart Home Resource Management based on Multi-Agent System Modeling Combined with SVM Machine Learning for Prediction and Decision-Making. ACHI -The Eleventh International Conference on Advances in Computer-Human Interactions, 2018.
+
+
+
