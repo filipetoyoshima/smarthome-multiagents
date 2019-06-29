@@ -10,25 +10,61 @@ def switch(agent, message):
 
 if __name__ == '__main__':
 
-    # System Deployment
-    """ TODO: instantiate all agents
-    sensorA = run_agent('sensorA')
-    lampA = run_agent('lampA')
-    """
+    ### System Deployment ###
+    
     ns = run_nameserver()
+    
+    # 'External' Input
+    person = run_agent(
+        name = 'person',
+        attributes = dict(
+            x = 0,
+            y = 0
+        )
+    )
+    environment = run_agent(
+        name = 'environment',
+        attributes = dict(
+            light = 1000, # lx, see https://en.wikipedia.org/wiki/Lux#Illuminance
+            temperature = 293 # °k
+        )
+    )
+    
+    # Sensors
     temperatureSensor = run_agent('tempertature')
     luminousSensor = run_agent('luminous')
     presenceSensor = run_agent('presence')
     proximitySensor = run_agent('proximity')
-    eletricController = run_agent('eletric')
-    arConditionerController = run_agent('arConditioner')
-    lampController = run_agent('lamp')
-    doorController = run_agent('door')
-    person = run_agent('person')
-    environment = run_agent('environment')
+    
+    # Controllers
+    eletricController = run_agent(
+        'eletric',
+        attributes = dict (
+            power = True
+        )
+    )
+    arConditionerController = run_agent(
+        'arConditioner',
+        attributes = dict (
+            power = False,
+            airTemperature = 289,
+        )
+    )
+    lampController = run_agent(
+        'lamp',
+        attributes = dict (
+            power = False
+        )
+    )
+    doorController = run_agent(
+        'door',
+        attributes = dict (
+            open = False
+        )
+    )
 
 
-    # System SetUp
+    ### System Setup ###
     # Two sensors that will observe the person in home
     personAddr = person.bind('PUB', alias='person')
     presenceSensor.connect(personAddr, handler=checkLocation)
