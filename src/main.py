@@ -99,16 +99,25 @@ class AirConditioner(PassiveDevice):
         )
 
 
-#class Lamps(PassiveDevice):
-#
-#    def on_init(self):
-#        super().on_init()
-#        
-#        self.topics = {
-#                'person_position': 
-#        }
-#
-#    def handle_
+class Lamp(PassiveDevice):
+
+    def on_init(self):
+        super().on_init()
+
+        self.active_area = [10, 10, 400, 400]
+
+
+    def handle_state(self, message=""):
+        if self.is_personpresent:
+            self.turnOn()
+        else:
+            self.turnOff()
+
+        self.log_info(
+            f"State from {self.__class__.__name__} changed" + message
+        )
+
+        
 
 
 if __name__ == '__main__':
@@ -119,6 +128,9 @@ if __name__ == '__main__':
 
     air_conditioner = run_agent('air_conditioner', base=AirConditioner)
     air_conditioner.connect(main_addr)
+
+    lamp = run_agent('lamp', base=Lamp)
+    lamp.connect(main_addr)
 
     for _ in range(50):
         temperature = str(randint(0, 50))
