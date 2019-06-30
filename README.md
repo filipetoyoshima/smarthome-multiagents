@@ -17,3 +17,4 @@ Pretende-se, a partir disso, permitir através do uso de clicks em diferentes lo
 5. Para desligar a luz, é preciso que o usuário peça em voz alta "desligue";
 6. Caso algum equipamento estrague, ele envia msg para pessoa (2 anos de uso);
 
+**Maiores descrições da implementação podem ser vista na [wiki](https://github.com/filipetoyoshima/smarthome-multiagents/wiki)**
