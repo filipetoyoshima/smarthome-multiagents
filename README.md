@@ -2,11 +2,11 @@
 
 Este repositório contém todo o código necessário para simular a automação residencial de uma kitnet, com os seguintes cômodos:
 
-- 1 quarto de 16 metros quadrados;
-- 1 cozinha 8 metros quadrados;
-- 1 sala 25 metros quadrados;
-- 1 banheiro 4 metros quadrados e;
-- 2 portas 82 cm de largura e 2,10 m.
+- 1 quarto;
+- 1 cozinha;
+- 1 sala;
+- 1 banheiro;
+- 3 portas.
 
 Pretende-se, a partir disso, permitir através do uso de clicks em diferentes locais dos cômodos da casa, as seguintes funções : 
 
@@ -57,8 +57,7 @@ Para a modelagem, consideramos o uso de agentes inteligentes, considerando os pr
 7. Agente de sensor de proximidade
 
 * Estado: Detecta proximidade de pessoa da porta, podendo ter ou não alguém presente.
-* Comportamento: Ao detectar presença de alguém, envia sinal para a porta <VER SE FAZ A PORTA FICAR CONSULTANDO SENSOR DE PROXIMIDADE>
-
+* Comportamento: Ao detectar presença de alguém, envia sinal para a porta.
 ## Referências
 
 
