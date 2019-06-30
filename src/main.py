@@ -1,11 +1,13 @@
 import time
+from tkinter import *
 from random import randint
+from graphic_user_interface.constants import *
+from graphic_user_interface.kitnet_gui import EnvironmentGUI
 from osbrain import (
     run_nameserver,
     run_agent,
     Agent
 )
-
 
 # Will wait for messages to react
 class PassiveDevice(Agent):
@@ -16,7 +18,8 @@ class PassiveDevice(Agent):
         )
 
     def on_init(self):
-        self.isOn = False
+        self.is_on = False
+        self.element_tag = ""
         self.is_personpresent = False
         self.active_area = [10, 10, 400, 400]
         self.topics = {
@@ -24,12 +27,14 @@ class PassiveDevice(Agent):
             'update_state': self.handle_state
         }
 
-    def turnOn(self):
-        self.isOn = True
+    def turn_on(self, topic):
+        self.is_on = True
+        self.send('main', self.element_tag, topic=topic)
         self.log_info(f">>>>>> Turned {self.__class__.__name__} on <<<<<<")
 
-    def turnOff(self):
-        self.isOn = False
+    def turn_off(self, topic):
+        self.is_on = False
+        self.send('main', self.element_tag, topic=topic)
         self.log_info(f">>>>>> Turned {self.__class__.__name__} off! <<<<<<")
 
     def connect(self, addr):
@@ -89,14 +94,22 @@ class AirConditioner(PassiveDevice):
             self.handle_state(f" Temperature changed: {temperature}º")
 
     def handle_state(self, message=""):
-        if self.is_personpresent and self.is_hot and not self.isOn:
-            self.turnOn()
-        elif not self.is_personpresent and self.is_cold and self.isOn:
-            self.turnOff()
+        if self.is_personpresent and self.is_hot and not self.is_on:
+            self.turn_on()
+        elif not self.is_personpresent and self.is_cold and self.is_on:
+            self.turn_off()
 
         self.log_info(
             f"State from {self.__class__.__name__} updated!" + message
         )
+
+    def turn_on_air(self):        
+        assert self.element_tag, 'You didn\'t set the element tag'
+        super().turn_on("turn_on_air", self.element_tag)
+    
+    def turn_off_air(self):        
+        assert self.element_tag, 'You didn\'t set the element tag' 
+        super().turn_off("turn_off_air", self.element_tag)
 
 
 class Lamp(PassiveDevice):
@@ -104,33 +117,80 @@ class Lamp(PassiveDevice):
     def on_init(self):
         super().on_init()
 
-        self.active_area = [10, 10, 400, 400]
-
-
     def handle_state(self, message=""):
         if self.is_personpresent:
-            self.turnOn()
+            self.turn_on()
         else:
-            self.turnOff()
+            self.turn_off()
 
         self.log_info(
             f"State from {self.__class__.__name__} changed" + message
         )
 
+    def turn_on(self):        
+        assert self.element_tag, 'You didn\'t set the element tag'
+        super().turn_on("turn_on_light", self.element_tag)
+    
+    def turn_off(self):        
+        assert self.element_tag, 'You didn\'t set the element tag' 
+        super().turn_off("turn_off_light", self.element_tag)
+    
+
+class Environment(Agent):
+
+    def on_init(self):
+        super().on_init()
+
+        main_addr = self.bind('PUB', alias='main')
         
+        root = Tk()
+        self.app = EnvironmentGUI(master=root, agent=self)
+        self.app.mainloop()    
+
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+        #print(self.addr('environment'))
+        print(main_addr)
+        print(self.addr('main'))
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+
+        self.connect(main_addr, alias='main', handler={'turn_on_light': self.handler_turn_on_lights,
+                                                       'turn_off_light': self.handler_turn_off_lights,
+                                                       'turn_off_air': self.handler_turn_off_air,
+                                                       'turn_on_air': self.handler_turn_on_air})
+        #self.connect(main_addr, alias='main', handler={'turn_off_light': self.handler_turn_off_lights})
+        #self.connect(main_addr, alias='main', handler={'turn_off_air': self.handler_turn_off_air})
+        #self.connect(main_addr, alias='main', handler={'turn_on_air': self.handler_turn_on_air})
+    
+    def handler_turn_on_lights(self, tag):
+        self.app.turn_on_light(tag)
+    
+    def handler_turn_off_lights(self, tag):
+        self.app.turn_off_light(tag)
+    
+    def handler_turn_on_air(self, tag):
+        self.app.turn_on_air_conditioner(tag)
+
+    def handler_turn_off_air(self, tag):
+        self.app.turn_off_air_conditioner(tag)
 
 
 if __name__ == '__main__':
     ns = run_nameserver()
 
-    environment = run_agent('environment')
-    main_addr = environment.bind('PUB', alias='main')
+    environment = run_agent('environment', base=Environment)   
 
-    air_conditioner = run_agent('air_conditioner', base=AirConditioner)
-    air_conditioner.connect(main_addr)
+    room_air_conditioner = run_agent('air_conditioner', base=AirConditioner, attributes={'active_area': [ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2],
+                                                                                         'element_tag': 'room_air'})
+    print("2@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    print(environment.addr('main'))
+    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    room_air_conditioner.connect(environment.addr('main'))
 
-    lamp = run_agent('lamp', base=Lamp)
-    lamp.connect(main_addr)
+    room_lamp = run_agent('room_lamp', base=Lamp, attributes={'active_area': [ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2],
+                                                              'element_tag': 'room'})
+    room_lamp.connect(environment.addr('main'))
+
+
 
     for _ in range(50):
         temperature = str(randint(0, 50))

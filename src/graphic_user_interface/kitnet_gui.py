@@ -1,11 +1,12 @@
 from tkinter import * 
-from constants import *
+from .constants import *
 
-class Application(Frame):
+class EnvironmentGUI(Frame):
     
-    def __init__(self, master=None):
+    def __init__(self, master=None, agent=None):
         super().__init__(master)
         self.master = master
+        self.agent = agent
         self.pack()
         self.create_widgets()
         self.mouse_handler()    
@@ -54,36 +55,25 @@ class Application(Frame):
 
     def mouse_motion(self, event):
         x, y = event.x, event.y
-        print('{}, {}'.format(x, y))
-        self.turn_on_lights(x, y)
-        self.open_doors(x, y)
+        self.agent.send('main', str((x,y)), topic='person_position')
+        #self.turn_on_lights(x, y)
+        #self.open_doors(x, y)
 
-    def turn_on_lights(self, x, y):
-        # Test if the person is into some room's house and turn on the room light
-        if x > ROOM_X1 and x < ROOM_X2 and y > ROOM_Y1 and y < ROOM_Y2:            
-            self.turn_on_room_light()
-        elif x > BEDROOM_X1 and x < BEDROOM_X2 and y > BEDROOM_Y1 and y < BEDROOM_Y2:
-            self.turn_on_bedroom_light()
-        elif x > KITCHEN_X1 and x < KITCHEN_X2 and y > KITCHEN_Y1 and y < KITCHEN_Y2:
-            self.turn_on_kitchen_light()
-        elif x > BATHROOM_X1 and x < BATHROOM_X2 and y > BATHROOM_Y1 and y < BATHROOM_Y2:
-            self.turn_on_bathroom_light()   
+    def turn_on_light(self, tag):
+        element = self.canvas.find_withtag(tag)
+        self.canvas.itemconfig(element, fill='yellow')
 
-    def turn_on_room_light(self):
-        room = self.canvas.find_withtag('room')
-        self.canvas.itemconfig(room, fill='yellow')
+    def turn_off_light(self, tag):
+        element = self.canvas.find_withtag(tag)
+        self.canvas.itemconfig(element, fill='grey')
 
-    def turn_on_bedroom_light(self):
-        room = self.canvas.find_withtag('bedroom')
-        self.canvas.itemconfig(room, fill='yellow')
+    def turn_on_air_conditioner(self, tag):
+        element = self.canvas.find_withtag(tag)
+        self.canvas.itemconfig(element, fill='blue')
 
-    def turn_on_kitchen_light(self):
-        room = self.canvas.find_withtag('kitchen')
-        self.canvas.itemconfig(room, fill='yellow')
-
-    def turn_on_bathroom_light(self):
-        room = self.canvas.find_withtag('bathroom')
-        self.canvas.itemconfig(room, fill='yellow')
+    def turn_off_air_conditioner(self, tag):
+        element = self.canvas.find_withtag(tag)
+        self.canvas.itemconfig(element, fill='white')
 
     def open_doors(self, x, y):
         if x > ROOM_DOOR_X1 - 20 and x < ROOM_DOOR_X2 + 20 and y > ROOM_DOOR_Y1 and y < ROOM_DOOR_Y2:
@@ -106,6 +96,4 @@ class Application(Frame):
         self.canvas.itemconfig(bedroom_door, fill='green')
        
 
-root = Tk()
-app = Application(master=root)
-app.mainloop()
+
