@@ -18,3 +18,13 @@ Pretende-se, a partir disso, permitir através do uso de clicks em diferentes lo
 6. Caso algum equipamento estrague, ele envia msg para pessoa (2 anos de uso);
 
 **Maiores descrições da implementação podem ser vista na [wiki](https://github.com/filipetoyoshima/smarthome-multiagents/wiki)**
+
+## Como rodar a aplicação
+
+Para visualizar a simulação é preciso ter instaladas as seguintes dependências na sua máquina: 
+
+* Python 3 : sudo apt-get install python3.6
+* Osbrain : pip3 install osbrain
+* TkInter : sudo apt-get install python3-tk
+
+Assim, basta executar a interface gráfica : python3 src/graphic_user_interface/kitnet_gui.py
