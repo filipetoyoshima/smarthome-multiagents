@@ -1,126 +1,137 @@
-from osbrain import run_agent
-from osbrain import run_nameserver
+import time
+from random import randint
+from osbrain import (
+    run_nameserver,
+    run_agent,
+    Agent
+)
 
-"""
-TODO: create handlers
+# Will wait for messages to react
+class PassiveDevices(Agent):
 
-def switch(agent, message):
-    agent.log_info('received message')
-"""
+    def __call__(self):
+        raise Exception("Abstract class! Not meant to be instantiated")
 
-def getTemperature(self, message):
-    if message > 293:
-        self.isHeat = True
-    else:
-        self.isHeat = False
+    def on_init(self):
+        self.isOn = False
+
+    def turnOn(self, temperature):
+        self.isOn = True
+        self.log_info(f"Turned {self.__class__.__name__} on! Temperature: {temperature}º")
+
+    def turnOff(self, temperature):
+        self.isOn = False
+        self.log_info(f"Turned {self.__class__.__name__} off! Temperature: {temperature}º")
+
+    def connect(self, addr):
+        if not self.topics:
+            raise Exception("Set topics for " + self.__class__.__name__ + "!!!")
+        super().connect(addr, alias='main', handler=self.topics)
 
 
-def seePresence(self, message):
-    self.presence = message
+class AirConditioner(PassiveDevices):
 
+    upper_temperature = 26
+    lower_temperature = 19
+
+    def on_init(self):
+        super().on_init()
+
+        self.isHot = False
+        self.topics = {
+            'temperature': AirConditioner.handle_temperature
+        }
+
+    @staticmethod
+    def handle_temperature(agent, message):
+        temperature = int(message)
+
+        if temperature >= agent.upper_temperature and not agent.isOn:
+            agent.turnOn(temperature)
+        elif temperature <= agent.lower_temperature and agent.isOn:
+            agent.turnOff(temperature)
 
 if __name__ == '__main__':
+    ns = run_nameserver()
 
-    ### System Deployment ###
-    ### This will define the agents on program
+    environment = run_agent('environment')
+    main_addr = environment.bind('PUB', alias='main')
+
+    air_conditioner = run_agent('air_conditioner', base=AirConditioner)
+    air_conditioner.connect(main_addr)
+
+    for _ in range(50):
+        temperature = str(randint(0, 50))
+        environment.send('main', temperature, topic='temperature')
+        time.sleep(1/20)
+
+    ns.shutdown()
     
-    ns = run_nameserver()  # Register main server where the agents will be registered by alias
-    
-    # 'External' Input
-    person = run_agent(
-        name = 'person',
-        attributes = dict(
-            x = 0,
-            y = 0
-        )
-    )
-    environment = run_agent(
-        name = 'environment',
-        attributes = dict(
-            light = 1000, # the unit is lx, see https://en.wikipedia.org/wiki/Lux#Illuminance
-            temperature = 293 # the unit is °k
-        )
-    )
-    
-    # Sensors
-    temperatureSensor = run_agent('tempertature')
-    luminositySensor = run_agent('luminous')
-    presenceSensor = run_agent('presence')
-    proximitySensor = run_agent('proximity')
+    ## 'External' Input
+    #person = run_agent(
+    #    name = 'person',
+    #    attributes = dict(
+    #        x = 0,
+    #        y = 0
+    #    )
+    #)
+    #
+    ## Sensors
+    #temperatureSensor = run_agent('tempertature')
+    #luminositySensor = run_agent('luminous')
+    #presenceSensor = run_agent('presence')
+    #proximitySensor = run_agent('proximity')
+    #
+    ## Controllers
+    #eletricController = run_agent(
+    #    'eletric',
+    #    attributes = dict (
+    #        power = True
+    #    )
+    #)
+    #lampController = run_agent(
+    #    'lamp',
+    #    attributes = dict (
+    #        presence = False,
+    #        isNeeded = False,
+    #        power = False
+    #    )
+    #)
+    #doorController = run_agent(
+    #    'door',
+    #    attributes = dict (
+    #        open = False
+    #    )
+    #)
 
-    # Controllers
-    eletricController = run_agent(
-        'eletric',
-        attributes = dict (
-            power = True
-        )
-    )
-    arConditionerController = run_agent(
-        'arConditioner',
-        attributes = dict (
-            presence = False,
-            isHeat = False,
-            power = False,
-            airTemperature = 289
-        )
-    )
-    lampController = run_agent(
-        'lamp',
-        attributes = dict (
-            presence = False,
-            isNeeded = False,
-            power = False
-        )
-    )
-    doorController = run_agent(
-        'door',
-        attributes = dict (
-            open = False
-        )
-    )
 
-    # Follow the steps
+    #### System Setup ###
+    #### This will connect agents that must send/receive data
 
-    temperatureSensor.log_info('temperature sensor is running')
-    luminositySensor.log_info('luminous sensor is running')
-    presenceSensor.log_info('presence sensor is running')
-    proximitySensor.log_info('proximity sensor is running')
-    eletricController.log_info('temperature sensor is running')
-    arConditionerController.log_info('luminous sensor is running')
-    lampController.log_info('presence sensor is running')
-    doorController.log_info('proximity sensor is running')
+    ## Two sensors that will observe the person in home
+    #personAddr = person.bind('PUB', alias='person')
+    #presenceSensor.connect(personAddr, handler=checkLocation)
+    #proximitySensor.connect(personAddr, handler=checkDistance)
+    #
+    ## Two sensors that will observe enviroment details
+    #environAddr = environment.bind('PUB', alias='environment')
+    #temperatureSensor.connect(environAddr, handler=setTemperature)
+    #luminositySensor.connect(environAddr, handler=setLight)
 
-    ### System Setup ###
-    ### This will connect agents that must send/receive data
+    ## Temperature sensor will send data to the arConditioner
+    #temperatureAddr = temperatureSensor('PUB', alias='temperature')
+    #arConditionerController.connect(temperatureAddr, handler=getTemperature)
+    #
+    ## Light sensor will send data to the lamps
+    #luminousAddr = luminositySensor('PUB', alias='light')
+    #lampController.connect(luminousAddr, handler=receiveLight)
 
-    # Two sensors that will observe the person in home
-    personAddr = person.bind('PUB', alias='person')
-    presenceSensor.connect(personAddr, handler=checkLocation)
-    proximitySensor.connect(personAddr, handler=checkDistance)
-    
-    # Two sensors that will observe enviroment details
-    environAddr = environment.bind('PUB', alias='environment')
-    temperatureSensor.connect(environAddr, handler=setTemperature)
-    luminositySensor.connect(environAddr, handler=setLight)
+    ## Presence sensor will send data to the arConditioner and to the lamps
+    #presenceAddr = presenceSensor('PUB', alias='presence')
+    #arConditionerController.connect(presenceAddr, handler=seePresence)
+    #lampController.connect(presenceAddr, handler=seePresence)
 
-    # Temperature sensor will send data to the arConditioner
-    temperatureAddr = temperatureSensor('PUB', alias='temperature')
-    arConditionerController.connect(temperatureAddr, handler=getTemperature)
-    
-    # Light sensor will send data to the lamps
-    luminousAddr = luminositySensor('PUB', alias='light')
-    lampController.connect(luminousAddr, handler=receiveLight)
-
-    # Presence sensor will send data to the arConditioner and to the lamps
-    presenceAddr = presenceSensor('PUB', alias='presence')
-    arConditionerController.connect(presenceAddr, handler=seePresence)
-    lampController.connect(presenceAddr, handler=seePresence)
-
-    # Proximity sensor will send data to the doors controlers
-    proxAddr = proximitySensor('PUB', alias='proximity')
-    doorController.connect(proxAddr, handler=setOpen)
-    
-
-    # Send message
-    """ TODO: monitor things in smart home
-    """
+    ## Proximity sensor will send data to the doors controlers
+    #proxAddr = proximitySensor('PUB', alias='proximity')
+    #doorController.connect(proxAddr, handler=setOpen)
+    #
