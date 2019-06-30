@@ -24,7 +24,7 @@ if __name__ == '__main__':
     ### System Deployment ###
     ### This will define the agents on program
     
-    ns = run_nameserver()
+    ns = run_nameserver()  # Register main server where the agents will be registered by alias
     
     # 'External' Input
     person = run_agent(
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     luminositySensor = run_agent('luminous')
     presenceSensor = run_agent('presence')
     proximitySensor = run_agent('proximity')
-    
+
     # Controllers
     eletricController = run_agent(
         'eletric',
@@ -79,6 +79,16 @@ if __name__ == '__main__':
         )
     )
 
+    # Follow the steps
+
+    temperatureSensor.log_info('temperature sensor is running')
+    luminositySensor.log_info('luminous sensor is running')
+    presenceSensor.log_info('presence sensor is running')
+    proximitySensor.log_info('proximity sensor is running')
+    eletricController.log_info('temperature sensor is running')
+    arConditionerController.log_info('luminous sensor is running')
+    lampController.log_info('presence sensor is running')
+    doorController.log_info('proximity sensor is running')
 
     ### System Setup ###
     ### This will connect agents that must send/receive data
