@@ -19,6 +19,7 @@ class Application(Frame):
         
         self.create_rooms()        
         self.create_doors()
+        self.create_air_conditioners()
 
     def create_rooms(self):
         # Create kitnet's rooms. Parameters of create_rectangle:(x1, y1, x2, y2, fill)
@@ -36,9 +37,16 @@ class Application(Frame):
 
     def create_doors(self):
         # Create kitnet's automatic doors.        
-        room_door = self.canvas.create_rectangle(ROOM_DOOR_X1, ROOM_DOOR_Y1, ROOM_DOOR_X2, ROOM_DOOR_Y2, fill = "red")
-        bathroom_door = self.canvas.create_rectangle(BATHROOM_DOOR_X1, BATHROOM_DOOR_Y1, BATHROOM_DOOR_X2, BATHROOM_DOOR_Y2, fill = "red")
-        bedroom_door = self.canvas.create_rectangle(BEDROOM_DOOR_X1, BEDROOM_DOOR_Y1, BEDROOM_DOOR_X2, BEDROOM_DOOR_Y2, fill = "red")
+        room_door = self.canvas.create_rectangle(ROOM_DOOR_X1, ROOM_DOOR_Y1, ROOM_DOOR_X2, ROOM_DOOR_Y2, fill = "red", tags="room_door")
+        bathroom_door = self.canvas.create_rectangle(BATHROOM_DOOR_X1, BATHROOM_DOOR_Y1, BATHROOM_DOOR_X2, BATHROOM_DOOR_Y2, fill = "red", tags="bathroom_door")
+        bedroom_door = self.canvas.create_rectangle(BEDROOM_DOOR_X1, BEDROOM_DOOR_Y1, BEDROOM_DOOR_X2, BEDROOM_DOOR_Y2, fill = "red", tags="bedroom_door")
+
+    def create_air_conditioners(self):
+        room_air = self.canvas.create_rectangle(ROOM_AIR_X1, ROOM_AIR_Y1, ROOM_AIR_X2, ROOM_AIR_Y2, fill = "white", tags="room_air")
+        room_air_text = self.canvas.create_text(ROOM_AIR_TEXT_X, ROOM_AIR_TEXT_Y, text="0 C", font=("Papyrus", 12), fill='black',tags="room_air_text")
+
+        bedroom_air = self.canvas.create_rectangle(BEDROOM_AIR_X1, BEDROOM_AIR_Y1, BEDROOM_AIR_X2, BEDROOM_AIR_Y2, fill = "white", tags="bedroom_air")
+        bedroom_text = self.canvas.create_text(BEDROOM_AIR_TEXT_X, BEDROOM_AIR_TEXT_Y, text="0 C", font=("Papyrus", 12), fill='black',tags="bedroom_air_text")        
 
     def mouse_handler(self):
         # Get mouse motion
@@ -47,7 +55,10 @@ class Application(Frame):
     def mouse_motion(self, event):
         x, y = event.x, event.y
         print('{}, {}'.format(x, y))
+        self.turn_on_lights(x, y)
+        self.open_doors(x, y)
 
+    def turn_on_lights(self, x, y):
         # Test if the person is into some room's house and turn on the room light
         if x > ROOM_X1 and x < ROOM_X2 and y > ROOM_Y1 and y < ROOM_Y2:            
             self.turn_on_room_light()
@@ -56,7 +67,7 @@ class Application(Frame):
         elif x > KITCHEN_X1 and x < KITCHEN_X2 and y > KITCHEN_Y1 and y < KITCHEN_Y2:
             self.turn_on_kitchen_light()
         elif x > BATHROOM_X1 and x < BATHROOM_X2 and y > BATHROOM_Y1 and y < BATHROOM_Y2:
-            self.turn_on_bathroom_light()
+            self.turn_on_bathroom_light()   
 
     def turn_on_room_light(self):
         room = self.canvas.find_withtag('room')
@@ -74,7 +85,26 @@ class Application(Frame):
         room = self.canvas.find_withtag('bathroom')
         self.canvas.itemconfig(room, fill='yellow')
 
-        
+    def open_doors(self, x, y):
+        if x > ROOM_DOOR_X1 - 20 and x < ROOM_DOOR_X2 + 20 and y > ROOM_DOOR_Y1 and y < ROOM_DOOR_Y2:
+            self.open_room_door()
+        elif x > BATHROOM_DOOR_X1 and x < BATHROOM_DOOR_X2 and y > BATHROOM_DOOR_Y1 - 20 and y < BATHROOM_DOOR_Y2 + 20:
+            self.open_bathroom_door()
+        elif x > BEDROOM_DOOR_X1 - 20 and x < BEDROOM_DOOR_X2 + 20 and y > BEDROOM_DOOR_Y1 and y < BEDROOM_DOOR_Y2:
+            self.open_bedroom_door()
+
+    def open_room_door(self):
+        room_door = self.canvas.find_withtag('room_door')
+        self.canvas.itemconfig(room_door, fill='green')
+
+    def open_bathroom_door(self):
+        bathroom_door = self.canvas.find_withtag('bathroom_door')
+        self.canvas.itemconfig(bathroom_door, fill='green')
+
+    def open_bedroom_door(self):
+        bedroom_door = self.canvas.find_withtag('bedroom_door')
+        self.canvas.itemconfig(bedroom_door, fill='green')
+       
 
 root = Tk()
 app = Application(master=root)
