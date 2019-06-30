@@ -56,8 +56,6 @@ class EnvironmentGUI(Frame):
     def mouse_motion(self, event):
         x, y = event.x, event.y
         self.agent.send('from_gui', str((x,y)), topic='person_position')
-        #self.turn_on_lights(x, y)
-        #self.open_doors(x, y)
 
     def turn_on_light(self, tag):
         element = self.canvas.find_withtag(tag)

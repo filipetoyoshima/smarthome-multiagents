@@ -144,16 +144,19 @@ class Environment(Agent):
     def on_init(self):
         super().on_init()
 
-        main_addr = self.bind('PUB', alias='from_gui')
-        
+        main_addr = self.bind('PUB', alias='from_gui')               
+
+    def connect(self, addr):
+        super().connect(addr, alias='to_gui', handler={'turn_on_light': self.handler_turn_on_lights,
+                                                         'turn_off_light': self.handler_turn_off_lights,
+                                                         'turn_off_air': self.handler_turn_off_air,
+                                                         'turn_on_air': self.handler_turn_on_air})
+
+    def start_gui(self):
+
         root = Tk()
         self.app = EnvironmentGUI(master=root, agent=self)
         self.app.mainloop()    
-        
-        self.connect(main_addr, alias='to_gui', handler={'turn_on_light': self.handler_turn_on_lights,
-                                                       'turn_off_light': self.handler_turn_off_lights,
-                                                       'turn_off_air': self.handler_turn_off_air,
-                                                       'turn_on_air': self.handler_turn_on_air})
     
     def handler_turn_on_lights(self, tag):
         self.app.turn_on_light(tag)
@@ -171,94 +174,32 @@ class Environment(Agent):
 if __name__ == '__main__':
     ns = run_nameserver()
 
-    environment = run_agent('environment', base=Environment)   
-
-    room_air_conditioner = run_agent('air_conditioner', base=AirConditioner)
-    room_air_conditioner.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room_air')
-    room_air_conditioner.connect(environment.addr('from_gui'))
-
     room_lamp = run_agent('room_lamp', base=Lamp)
-    room_lamp.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room' )    
-    room_lamp.connect(environment.addr('from_gui'))
+    room_lamp.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room')    
+   # room_lamp.connect(environment.addr('from_gui'))
+
+    environment = run_agent('environment', base=Environment)  
+    environment.connect(room_lamp.addr('to_gui')) 
+
+    """room_air_conditioner = run_agent('air_conditioner', base=AirConditioner)
+    room_air_conditioner.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room_air')
+    room_air_conditioner.connect(environment.addr('from_gui'))"""
 
 
+    environment.start_gui()
 
     for _ in range(50):
+        room_lamp.send('to_gui', 'room', topic='turn_on_light')
+        time.sleep(1/20)
+
+    """
         temperature = str(randint(0, 50))
         environment.send('from_gui', temperature, topic='temperature')
 
         person_position = str((randint(0, 500), randint(0, 500)))
         environment.send('from_gui', person_position, topic='person_position')
-
-        time.sleep(1/20)
+    """
+    
 
     ns.shutdown()
     
-    ## 'External' Input
-    #person = run_agent(
-    #    name = 'person',
-    #    attributes = dict(
-    #        x = 0,
-    #        y = 0
-    #    )
-    #)
-    #
-    ## Sensors
-    #temperatureSensor = run_agent('tempertature')
-    #luminositySensor = run_agent('luminous')
-    #presenceSensor = run_agent('presence')
-    #proximitySensor = run_agent('proximity')
-    #
-    ## Controllers
-    #eletricController = run_agent(
-    #    'eletric',
-    #    attributes = dict (
-    #        power = True
-    #    )
-    #)
-    #lampController = run_agent(
-    #    'lamp',
-    #    attributes = dict (
-    #        presence = False,
-    #        isNeeded = False,
-    #        power = False
-    #    )
-    #)
-    #doorController = run_agent(
-    #    'door',
-    #    attributes = dict (
-    #        open = False
-    #    )
-    #)
-
-
-    #### System Setup ###
-    #### This will connect agents that must send/receive data
-
-    ## Two sensors that will observe the person in home
-    #personAddr = person.bind('PUB', alias='person')
-    #presenceSensor.connect(personAddr, handler=checkLocation)
-    #proximitySensor.connect(personAddr, handler=checkDistance)
-    #
-    ## Two sensors that will observe enviroment details
-    #environAddr = environment.bind('PUB', alias='environment')
-    #temperatureSensor.connect(environAddr, handler=setTemperature)
-    #luminositySensor.connect(environAddr, handler=setLight)
-
-    ## Temperature sensor will send data to the arConditioner
-    #temperatureAddr = temperatureSensor('PUB', alias='temperature')
-    #arConditionerController.connect(temperatureAddr, handler=getTemperature)
-    #
-    ## Light sensor will send data to the lamps
-    #luminousAddr = luminositySensor('PUB', alias='light')
-    #lampController.connect(luminousAddr, handler=receiveLight)
-
-    ## Presence sensor will send data to the arConditioner and to the lamps
-    #presenceAddr = presenceSensor('PUB', alias='presence')
-    #arConditionerController.connect(presenceAddr, handler=seePresence)
-    #lampController.connect(presenceAddr, handler=seePresence)
-
-    ## Proximity sensor will send data to the doors controlers
-    #proxAddr = proximitySensor('PUB', alias='proximity')
-    #doorController.connect(proxAddr, handler=setOpen)
-    #
