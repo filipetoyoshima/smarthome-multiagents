@@ -55,7 +55,7 @@ class EnvironmentGUI(Frame):
 
     def mouse_motion(self, event):
         x, y = event.x, event.y
-        self.agent.send('main', str((x,y)), topic='person_position')
+        self.agent.send('from_gui', str((x,y)), topic='person_position')
         #self.turn_on_lights(x, y)
         #self.open_doors(x, y)
 
