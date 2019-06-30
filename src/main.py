@@ -6,6 +6,7 @@ from osbrain import (
     Agent
 )
 
+
 # Will wait for messages to react
 class PassiveDevice(Agent):
 
@@ -16,10 +17,11 @@ class PassiveDevice(Agent):
 
     def on_init(self):
         self.isOn = False
+        self.is_personpresent = False
         self.active_area = [10, 10, 400, 400]
         self.topics = {
-            'person_position': AirConditioner.handle_presence,
-            'update_state': PassiveDevice.handle_state
+            'person_position': self.handle_presence,
+            'update_state': self.handle_state
         }
 
     def turnOn(self):
@@ -38,6 +40,7 @@ class PassiveDevice(Agent):
 
     # At smarthome all passive devices depends on presence
     def handle_presence(self, message):
+        # Format of message: (x, y)
         person_x, person_y = (int(c.strip()) for c in message[1:-1].split(','))
         area_x1, area_y1, area_x2, area_y2 = self.active_area
 
@@ -65,7 +68,6 @@ class AirConditioner(PassiveDevice):
 
         self.is_hot = False
         self.is_cold = False
-        self.is_personpresent = False
         self.upper_temperature = 26
         self.lower_temperature = 19
         self.topics = {
@@ -73,16 +75,17 @@ class AirConditioner(PassiveDevice):
             'temperature': AirConditioner.handle_temperature,
         }
 
-    def handle_temperature(self, message):
-        temperature = int(message)
+    def handle_temperature(self, temperature_string):
+        temperature = int(temperature_string)
 
-        old_state = self.is_hot # Don't need to check cold and hot
+        old_state_hot = self.is_hot
+        old_state_cold = self.is_cold
 
         # Not hot doesn't mean is cold
         self.is_hot = temperature >= self.upper_temperature
         self.is_cold = temperature <= self.lower_temperature
 
-        if old_state != self.is_hot:
+        if old_state_hot != self.is_hot or old_state_cold != self.is_cold:
             self.handle_state(f" Temperature changed: {temperature}º")
 
     def handle_state(self, message=""):
