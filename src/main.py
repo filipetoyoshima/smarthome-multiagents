@@ -7,49 +7,106 @@ from osbrain import (
 )
 
 # Will wait for messages to react
-class PassiveDevices(Agent):
+class PassiveDevice(Agent):
 
     def __call__(self):
-        raise Exception("Abstract class! Not meant to be instantiated")
+        raise NotImplementedError(
+            "Abstract class! Not meant to be instantiated"
+        )
 
     def on_init(self):
         self.isOn = False
+        self.active_area = [10, 10, 400, 400]
+        self.topics = {
+            'person_position': AirConditioner.handle_presence,
+            'update_state': PassiveDevice.handle_state
+        }
 
-    def turnOn(self, temperature):
+    def turnOn(self):
         self.isOn = True
-        self.log_info(f"Turned {self.__class__.__name__} on! Temperature: {temperature}º")
+        self.log_info(f">>>>>> Turned {self.__class__.__name__} on <<<<<<")
 
-    def turnOff(self, temperature):
+    def turnOff(self):
         self.isOn = False
-        self.log_info(f"Turned {self.__class__.__name__} off! Temperature: {temperature}º")
+        self.log_info(f">>>>>> Turned {self.__class__.__name__} off! <<<<<<")
 
     def connect(self, addr):
-        if not self.topics:
-            raise Exception("Set topics for " + self.__class__.__name__ + "!!!")
+        assert_msg = "Set topics for " + self.__class__.__name__ + "!!!"
+        assert self.topics, assert_msg
+
         super().connect(addr, alias='main', handler=self.topics)
 
+    # At smarthome all passive devices depends on presence
+    def handle_presence(self, message):
+        person_x, person_y = (int(c.strip()) for c in message[1:-1].split(','))
+        area_x1, area_y1, area_x2, area_y2 = self.active_area
 
-class AirConditioner(PassiveDevices):
+        old_state = self.is_personpresent
+        self.is_personpresent = (
+            person_x > area_x1 and person_x  < area_x2
+            and person_y > area_y1 and person_y < area_y2
+        )
 
-    upper_temperature = 26
-    lower_temperature = 19
+        if old_state != self.is_personpresent:
+            self.handle_state(f" Presence changed, now: {self.is_personpresent}")
+
+    def handle_state(self):
+        # If something, turn on. Else, turn off
+        raise NotImplementedError(
+            "Passive devices must override handle_state"
+            "and subscribe to update_state topic"
+        )
+
+
+class AirConditioner(PassiveDevice):
 
     def on_init(self):
         super().on_init()
 
-        self.isHot = False
+        self.is_hot = False
+        self.is_cold = False
+        self.is_personpresent = False
+        self.upper_temperature = 26
+        self.lower_temperature = 19
         self.topics = {
-            'temperature': AirConditioner.handle_temperature
+            **self.topics, 
+            'temperature': AirConditioner.handle_temperature,
         }
 
-    @staticmethod
-    def handle_temperature(agent, message):
+    def handle_temperature(self, message):
         temperature = int(message)
 
-        if temperature >= agent.upper_temperature and not agent.isOn:
-            agent.turnOn(temperature)
-        elif temperature <= agent.lower_temperature and agent.isOn:
-            agent.turnOff(temperature)
+        old_state = self.is_hot # Don't need to check cold and hot
+
+        # Not hot doesn't mean is cold
+        self.is_hot = temperature >= self.upper_temperature
+        self.is_cold = temperature <= self.lower_temperature
+
+        if old_state != self.is_hot:
+            self.handle_state(f" Temperature changed: {temperature}º")
+
+    def handle_state(self, message=""):
+        if self.is_personpresent and self.is_hot and not self.isOn:
+            self.turnOn()
+        elif not self.is_personpresent and self.is_cold and self.isOn:
+            self.turnOff()
+
+        self.log_info(
+            f"State from {self.__class__.__name__} updated!" + message
+        )
+
+
+#class Lamps(PassiveDevice):
+#
+#    def on_init(self):
+#        super().on_init()
+#        
+#        self.topics = {
+#                'person_position': 
+#        }
+#
+#    def handle_
+
 
 if __name__ == '__main__':
     ns = run_nameserver()
@@ -63,6 +120,10 @@ if __name__ == '__main__':
     for _ in range(50):
         temperature = str(randint(0, 50))
         environment.send('main', temperature, topic='temperature')
+
+        person_position = str((randint(0, 500), randint(0, 500)))
+        environment.send('main', person_position, topic='person_position')
+
         time.sleep(1/20)
 
     ns.shutdown()
