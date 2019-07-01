@@ -23,34 +23,27 @@ class PassiveDevice(Agent):
         self.element_tag = ""
         self.is_personpresent = False
         self.active_area = [10, 10, 400, 400]
-        self.topics = {
-            'person_position': self.handle_presence,
-            'update_state': self.handle_state
-        }
-
+ 
         main_addr = self.bind('PUB', alias='to_gui')
 
 
     def turn_on(self, topic):
         self.is_on = True
-        self.send('to_gui', self.element_tag, topic=topic)
         self.log_info(f">>>>>> Turned {self.__class__.__name__} on <<<<<<")
 
     def turn_off(self, topic):
         self.is_on = False
-        self.send('to_gui', self.element_tag, topic=topic)
         self.log_info(f">>>>>> Turned {self.__class__.__name__} off! <<<<<<")
 
     def connect(self, addr):
         assert_msg = "Set topics for " + self.__class__.__name__ + "!!!"
-        assert self.topics, assert_msg
 
         super().connect(addr, alias='from_gui', handler=self.topics)
+
 
     # At smarthome all passive devices depends on presence
     def handle_presence(self, message):
         # Format of message: (x, y)
-
         person_x, person_y = (int(c.strip()) for c in message[1:-1].split(','))
         area_x1, area_y1, area_x2, area_y2 = self.active_area
 
@@ -61,7 +54,9 @@ class PassiveDevice(Agent):
         )
 
         if old_state != self.is_personpresent:
-            self.handle_state(f" Presence changed, now: {self.is_personpresent}")
+            return self.handle_state(f" Presence changed, now: {self.is_personpresent}")
+
+        return None, None
 
     def handle_state(self):
         # If something, turn on. Else, turn off
@@ -81,7 +76,7 @@ class AirConditioner(PassiveDevice):
         self.upper_temperature = 26
         self.lower_temperature = 19
         self.topics = {
-            **self.topics, 
+            # **self.topics, 
             'temperature': AirConditioner.handle_temperature,
         }
 
@@ -99,14 +94,20 @@ class AirConditioner(PassiveDevice):
             self.handle_state(f" Temperature changed: {temperature}º")
 
     def handle_state(self, message=""):
+        state = (None, None)
+
         if self.is_personpresent and self.is_hot and not self.is_on:
             self.turn_on()
+            state = ('air', True)
         elif not self.is_personpresent and self.is_cold and self.is_on:
             self.turn_off()
+            state = ('air', False)
 
         self.log_info(
             f"State from {self.__class__.__name__} updated!" + message
         )
+
+        return state
 
     def turn_on(self):        
         assert self.element_tag, 'You didn\'t set the element tag'
@@ -123,14 +124,19 @@ class Lamp(PassiveDevice):
         super().on_init()
 
     def handle_state(self, message=""):
+        state = (None, None)
         if self.is_personpresent:
             self.turn_on()
+            state = ('lamp', True)
         else:
             self.turn_off()
+            state = ('lamp', False)
 
         self.log_info(
             f"State from {self.__class__.__name__} changed" + message
         )
+
+        return state
 
     def turn_on(self):        
         assert self.element_tag, 'You didn\'t set the element tag'
@@ -143,52 +149,98 @@ class Lamp(PassiveDevice):
 
 class Environment(Agent):
 
+    agents = []
+
     def on_init(self):
         super().on_init()
+        main_addr = self.bind('PUB', alias='from_gui')
 
-        main_addr = self.bind('PUB', alias='from_gui')               
+        self.create_lamp_agents()
+        self.create_air_agents()
 
-    def connect(self, addr):
-        super().connect(addr, alias='to_gui', handler={'turn_on_light': self.handler_turn_on_lights,
-                                                         'turn_off_light': self.handler_turn_off_lights,
-                                                         'turn_off_air': self.handler_turn_off_air,
-                                                         'turn_on_air': self.handler_turn_on_air,
-                                                         'start_gui': self.start_gui})
+
+    def create_lamp_agents(self):
+        # Room Lamp Agent
+        self.room_lamp = run_agent('room_lamp', base=Lamp)
+        self.agents.append(self.room_lamp)
+        self.room_lamp.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room')
+
+        # Bedroom Lamp Agent
+        self.bedroom_lamp = run_agent('bedroom_lamp', base=Lamp)
+        self.agents.append(self.bedroom_lamp)
+        self.bedroom_lamp.set_attr(active_area=[BEDROOM_X1, BEDROOM_Y1, BEDROOM_X2, BEDROOM_Y2], element_tag='bedroom')
+
+        # Kitchen Lamp Agent
+        self.kitchen_lamp = run_agent('kitchen_lamp', base=Lamp)
+        self.agents.append(self.kitchen_lamp)
+        self.kitchen_lamp.set_attr(active_area=[KITCHEN_X1, KITCHEN_Y1, KITCHEN_X2, KITCHEN_Y2], element_tag='kitchen')
+
+        # Kitchen Lamp Agent
+        self.bathroom_lamp = run_agent('bathroom_lamp', base=Lamp)
+        self.agents.append(self.bathroom_lamp)
+        self.bathroom_lamp.set_attr(active_area=[BATHROOM_X1, BATHROOM_Y1, BATHROOM_X2, BATHROOM_Y2], element_tag='bathroom')
+
+
+    def create_air_agents(self):
+        # Room Air Agent
+        self.room_air = run_agent('room_air', base=AirConditioner)
+        self.agents.append(self.room_air)
+        self.room_air.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room')
+
+        # self.connect(self.room_air.addr('to_gui'))
+        self.room_air.connect(self.addr('from_gui'))
+
+        # Bedroom Air Agent
+        self.bedroom_air = run_agent('bedroom_air', base=AirConditioner)
+        self.agents.append(self.bedroom_air)
+        self.bedroom_air.set_attr(active_area=[BEDROOM_X1, BEDROOM_Y1, BEDROOM_X2, BEDROOM_Y2], element_tag='bedroom')
+        
+        # self.connect(self.bedroom_air.addr('to_gui'))
+        self.bedroom_air.connect(self.addr('from_gui'))
 
     def start_gui(self, msg=""):
         self.root = Tk()
         self.app = EnvironmentGUI(master=self.root, agent=self)
         self.root.mainloop()
-        
-    def handler_turn_on_lights(self, tag):
-        self.app.turn_on_light(tag)
-    
-    def handler_turn_off_lights(self, tag):
-        self.app.turn_off_light(tag)
-    
-    def handler_turn_on_air(self, tag):
-        self.app.turn_on_air_conditioner(tag)
 
-    def handler_turn_off_air(self, tag):
-        self.app.turn_off_air_conditioner(tag)
+    def mouse_handler(self, event):
+
+        
+        temperature = str(randint(0, 50))
+        print("===================================")
+        print(temperature)
+        print("===================================")
+        self.send('from_gui', temperature, topic='temperature')
+
+        # time.sleep(1)
+
+        x, y = event.x, event.y        
+
+        for agent in self.agents:
+            element, action = agent.handle_presence(str((x,y)))
+
+            if(element is None or action is None):
+                continue
+            if(element == 'air' and action is True):
+                tag = agent.get_attr('element_tag') + "_air"
+                text = tag + "_text"
+                self.app.turn_on_air_conditioner(tag, text)
+            elif(element == 'air' and action is False):
+                tag = agent.get_attr('element_tag') + "_air"
+                text = tag + "_text"
+                self.app.turn_off_air_conditioner(tag, text)
+            elif(element == 'lamp' and action is True):
+                self.app.turn_on_light(agent.get_attr('element_tag'))
+            elif(element == 'lamp' and action is False):
+                self.app.turn_off_light(agent.get_attr('element_tag'))
+                
 
 
 if __name__ == '__main__':
-    ns = run_nameserver()
-
-    room_lamp = run_agent('room_lamp', base=Lamp)
-    room_lamp.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room')    
+    ns = run_nameserver()    
 
     environment = run_agent('environment', base=Environment)
-
-    environment.connect(room_lamp.addr('to_gui'))
-    room_lamp.connect(environment.addr('from_gui'))
-
-    """room_air_conditioner = run_agent('air_conditioner', base=AirConditioner)
-    room_air_conditioner.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room_air')
-    room_air_conditioner.connect(environment.addr('from_gui'))"""
-
     environment.start_gui()
-    
+
     ns.shutdown()
     

@@ -44,18 +44,14 @@ class EnvironmentGUI(Frame):
 
     def create_air_conditioners(self):
         room_air = self.canvas.create_rectangle(ROOM_AIR_X1, ROOM_AIR_Y1, ROOM_AIR_X2, ROOM_AIR_Y2, fill = "white", tags="room_air")
-        room_air_text = self.canvas.create_text(ROOM_AIR_TEXT_X, ROOM_AIR_TEXT_Y, text="0 C", font=("Papyrus", 12), fill='black',tags="room_air_text")
+        room_air_text = self.canvas.create_text(ROOM_AIR_TEXT_X, ROOM_AIR_TEXT_Y, text="0 ºC", font=("Papyrus", 12), fill='black',tags="room_air_text")
 
         bedroom_air = self.canvas.create_rectangle(BEDROOM_AIR_X1, BEDROOM_AIR_Y1, BEDROOM_AIR_X2, BEDROOM_AIR_Y2, fill = "white", tags="bedroom_air")
-        bedroom_text = self.canvas.create_text(BEDROOM_AIR_TEXT_X, BEDROOM_AIR_TEXT_Y, text="0 C", font=("Papyrus", 12), fill='black',tags="bedroom_air_text")        
+        bedroom_text = self.canvas.create_text(BEDROOM_AIR_TEXT_X, BEDROOM_AIR_TEXT_Y, text="0 ºC", font=("Papyrus", 12), fill='black',tags="bedroom_air_text")        
 
     def mouse_handler(self):
         # Get mouse motion
-        self.canvas.bind('<Motion>', self.mouse_motion)
-
-    def mouse_motion(self, event):
-        x, y = event.x, event.y
-        self.agent.send('from_gui', str((x,y)), topic='person_position')
+        self.canvas.bind('<Motion>', self.agent.mouse_handler)
 
     def turn_on_light(self, tag):
         element = self.canvas.find_withtag(tag)
@@ -65,13 +61,17 @@ class EnvironmentGUI(Frame):
         element = self.canvas.find_withtag(tag)
         self.canvas.itemconfig(element, fill='grey')
 
-    def turn_on_air_conditioner(self, tag):
+    def turn_on_air_conditioner(self, tag, text):
         element = self.canvas.find_withtag(tag)
         self.canvas.itemconfig(element, fill='blue')
+        element_text = self.canvas.find_withtag(text)
+        self.canvas.itemconfig(element_text, text='22 ºC')
 
-    def turn_off_air_conditioner(self, tag):
+    def turn_off_air_conditioner(self, tag, text):
         element = self.canvas.find_withtag(tag)
         self.canvas.itemconfig(element, fill='white')
+        element_text = self.canvas.find_withtag(text)
+        self.canvas.itemconfig(element_text, text='0 ºC')
 
     def open_doors(self, x, y):
         if x > ROOM_DOOR_X1 - 20 and x < ROOM_DOOR_X2 + 20 and y > ROOM_DOOR_Y1 and y < ROOM_DOOR_Y2:
