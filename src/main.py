@@ -145,6 +145,35 @@ class Lamp(PassiveDevice):
     def turn_off(self):        
         assert self.element_tag, 'You didn\'t set the element tag' 
         super().turn_off("turn_off_light")
+
+class Door(PassiveDevice):
+
+    def on_init(self):
+        super().on_init()
+
+    def handle_state(self, message=""):
+        state = (None, None)
+        if self.is_personpresent:
+            self.turn_on()
+            state = ('door', True)
+        else:
+            self.turn_off()
+            state = ('door', False)
+
+        self.log_info(
+            f"State from {self.__class__.__name__} changed" + message
+        )
+
+        return state
+
+    def turn_on(self):        
+        assert self.element_tag, 'You didn\'t set the element tag'
+        super().turn_on("open_door")
+    
+    def turn_off(self):        
+        assert self.element_tag, 'You didn\'t set the element tag' 
+        super().turn_off("close_door")
+
     
 
 class Environment(Agent):
@@ -157,6 +186,7 @@ class Environment(Agent):
 
         self.create_lamp_agents()
         self.create_air_agents()
+        self.create_door_agents()
 
 
     def create_lamp_agents(self):
@@ -198,6 +228,23 @@ class Environment(Agent):
         # self.connect(self.bedroom_air.addr('to_gui'))
         self.bedroom_air.connect(self.addr('from_gui'))
 
+    def create_door_agents(self):
+        # Room Door Agent
+        self.room_door = run_agent('room_door', base=Door)
+        self.agents.append(self.room_door)
+        self.room_door.set_attr(active_area=[ROOM_DOOR_X1 - 20, ROOM_DOOR_Y1, ROOM_DOOR_X2 + 20, ROOM_DOOR_Y2], element_tag='room_door')
+
+        # Bedroom Door Agent
+        self.bedroom_door = run_agent('bedroom_door', base=Door)
+        self.agents.append(self.bedroom_door)
+        self.bedroom_door.set_attr(active_area=[BEDROOM_DOOR_X1 - 20, BEDROOM_DOOR_Y1, BEDROOM_DOOR_X2 + 20, BEDROOM_DOOR_Y2], element_tag='bedroom_door')
+
+        # Bathroom Door Agent
+        self.bathroom_door = run_agent('bathroom_door', base=Door)
+        self.agents.append(self.bathroom_door)
+        self.bathroom_door.set_attr(active_area=[BATHROOM_DOOR_X1, BATHROOM_DOOR_Y1 - 20, BATHROOM_DOOR_X2, BATHROOM_DOOR_Y2 + 20], element_tag='bathroom_door')
+
+
     def start_gui(self, msg=""):
         self.root = Tk()
         self.app = EnvironmentGUI(master=self.root, agent=self)
@@ -233,6 +280,10 @@ class Environment(Agent):
                 self.app.turn_on_light(agent.get_attr('element_tag'))
             elif(element == 'lamp' and action is False):
                 self.app.turn_off_light(agent.get_attr('element_tag'))
+            elif(element == 'door' and action is True):
+                self.app.open_door(agent.get_attr('element_tag'))
+            elif(element == 'door' and action is False):
+                self.app.close_door(agent.get_attr('element_tag'))
                 
 
 

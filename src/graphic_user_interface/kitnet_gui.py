@@ -73,25 +73,13 @@ class EnvironmentGUI(Frame):
         element_text = self.canvas.find_withtag(text)
         self.canvas.itemconfig(element_text, text='0 ºC')
 
-    def open_doors(self, x, y):
-        if x > ROOM_DOOR_X1 - 20 and x < ROOM_DOOR_X2 + 20 and y > ROOM_DOOR_Y1 and y < ROOM_DOOR_Y2:
-            self.open_room_door()
-        elif x > BATHROOM_DOOR_X1 and x < BATHROOM_DOOR_X2 and y > BATHROOM_DOOR_Y1 - 20 and y < BATHROOM_DOOR_Y2 + 20:
-            self.open_bathroom_door()
-        elif x > BEDROOM_DOOR_X1 - 20 and x < BEDROOM_DOOR_X2 + 20 and y > BEDROOM_DOOR_Y1 and y < BEDROOM_DOOR_Y2:
-            self.open_bedroom_door()
+    def open_door(self, tag):
+        element = self.canvas.find_withtag(tag)
+        self.canvas.itemconfig(element, fill='green')
 
-    def open_room_door(self):
-        room_door = self.canvas.find_withtag('room_door')
-        self.canvas.itemconfig(room_door, fill='green')
-
-    def open_bathroom_door(self):
-        bathroom_door = self.canvas.find_withtag('bathroom_door')
-        self.canvas.itemconfig(bathroom_door, fill='green')
-
-    def open_bedroom_door(self):
-        bedroom_door = self.canvas.find_withtag('bedroom_door')
-        self.canvas.itemconfig(bedroom_door, fill='green')
+    def close_door(self, tag):
+        element = self.canvas.find_withtag(tag)
+        self.canvas.itemconfig(element, fill='red')
        
 
 
