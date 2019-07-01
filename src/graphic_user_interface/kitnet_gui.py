@@ -61,17 +61,17 @@ class EnvironmentGUI(Frame):
         element = self.canvas.find_withtag(tag)
         self.canvas.itemconfig(element, fill='grey')
 
-    def turn_on_air_conditioner(self, tag, text):
+    def turn_on_air_conditioner(self, tag, text, temperature):
         element = self.canvas.find_withtag(tag)
         self.canvas.itemconfig(element, fill='blue')
         element_text = self.canvas.find_withtag(text)
-        self.canvas.itemconfig(element_text, text='22 ºC')
+        self.canvas.itemconfig(element_text, text=temperature + " ºC")
 
-    def turn_off_air_conditioner(self, tag, text):
+    def turn_off_air_conditioner(self, tag, text, temperature):
         element = self.canvas.find_withtag(tag)
         self.canvas.itemconfig(element, fill='white')
         element_text = self.canvas.find_withtag(text)
-        self.canvas.itemconfig(element_text, text='0 ºC')
+        self.canvas.itemconfig(element_text, text=temperature + " ºC")
 
     def open_door(self, tag):
         element = self.canvas.find_withtag(tag)

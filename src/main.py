@@ -96,7 +96,10 @@ class AirConditioner(PassiveDevice):
     def handle_state(self, message=""):
         state = (None, None)
 
-        if self.is_personpresent and self.is_hot and not self.is_on:
+        if self.is_personpresent is False:
+            self.turn_off()
+            state = ('air', False)
+        elif self.is_personpresent and self.is_hot and not self.is_on:
             self.turn_on()
             state = ('air', True)
         elif not self.is_personpresent and self.is_cold and self.is_on:
@@ -254,9 +257,6 @@ class Environment(Agent):
 
         
         temperature = str(randint(0, 50))
-        print("===================================")
-        print(temperature)
-        print("===================================")
         self.send('from_gui', temperature, topic='temperature')
 
         # time.sleep(1)
@@ -271,11 +271,11 @@ class Environment(Agent):
             if(element == 'air' and action is True):
                 tag = agent.get_attr('element_tag') + "_air"
                 text = tag + "_text"
-                self.app.turn_on_air_conditioner(tag, text)
+                self.app.turn_on_air_conditioner(tag, text, temperature)
             elif(element == 'air' and action is False):
                 tag = agent.get_attr('element_tag') + "_air"
                 text = tag + "_text"
-                self.app.turn_off_air_conditioner(tag, text)
+                self.app.turn_off_air_conditioner(tag, text, temperature)
             elif(element == 'lamp' and action is True):
                 self.app.turn_on_light(agent.get_attr('element_tag'))
             elif(element == 'lamp' and action is False):
