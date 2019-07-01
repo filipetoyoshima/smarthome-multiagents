@@ -9,10 +9,10 @@ class EnvironmentGUI(Frame):
         self.agent = agent
         self.pack()
         self.create_widgets()
-        self.mouse_handler()    
+        self.mouse_handler() 
 
     def create_widgets(self):
-        self.master.title("Kitnet automation system")
+        self.master.title("Kitnet Automation System")
 
         # creating the 'Canvas' area of width and height 1000px
         self.canvas = Canvas(self.master, width = CANVAS_WIDTH, height = CANVAS_HEIGHT)

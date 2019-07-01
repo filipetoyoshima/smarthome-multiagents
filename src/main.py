@@ -1,4 +1,5 @@
 import time
+import threading
 from tkinter import *
 from random import randint
 from graphic_user_interface.constants import *
@@ -49,6 +50,7 @@ class PassiveDevice(Agent):
     # At smarthome all passive devices depends on presence
     def handle_presence(self, message):
         # Format of message: (x, y)
+
         person_x, person_y = (int(c.strip()) for c in message[1:-1].split(','))
         area_x1, area_y1, area_x2, area_y2 = self.active_area
 
@@ -150,14 +152,14 @@ class Environment(Agent):
         super().connect(addr, alias='to_gui', handler={'turn_on_light': self.handler_turn_on_lights,
                                                          'turn_off_light': self.handler_turn_off_lights,
                                                          'turn_off_air': self.handler_turn_off_air,
-                                                         'turn_on_air': self.handler_turn_on_air})
+                                                         'turn_on_air': self.handler_turn_on_air,
+                                                         'start_gui': self.start_gui})
 
-    def start_gui(self):
-
-        root = Tk()
-        self.app = EnvironmentGUI(master=root, agent=self)
-        self.app.mainloop()    
-    
+    def start_gui(self, msg=""):
+        self.root = Tk()
+        self.app = EnvironmentGUI(master=self.root, agent=self)
+        self.root.mainloop()
+        
     def handler_turn_on_lights(self, tag):
         self.app.turn_on_light(tag)
     
@@ -176,30 +178,17 @@ if __name__ == '__main__':
 
     room_lamp = run_agent('room_lamp', base=Lamp)
     room_lamp.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room')    
-   # room_lamp.connect(environment.addr('from_gui'))
 
-    environment = run_agent('environment', base=Environment)  
-    environment.connect(room_lamp.addr('to_gui')) 
+    environment = run_agent('environment', base=Environment)
+
+    environment.connect(room_lamp.addr('to_gui'))
+    room_lamp.connect(environment.addr('from_gui'))
 
     """room_air_conditioner = run_agent('air_conditioner', base=AirConditioner)
     room_air_conditioner.set_attr(active_area=[ROOM_X1, ROOM_Y1, ROOM_X2, ROOM_Y2], element_tag='room_air')
     room_air_conditioner.connect(environment.addr('from_gui'))"""
 
-
     environment.start_gui()
-
-    for _ in range(50):
-        room_lamp.send('to_gui', 'room', topic='turn_on_light')
-        time.sleep(1/20)
-
-    """
-        temperature = str(randint(0, 50))
-        environment.send('from_gui', temperature, topic='temperature')
-
-        person_position = str((randint(0, 500), randint(0, 500)))
-        environment.send('from_gui', person_position, topic='person_position')
-    """
     
-
     ns.shutdown()
     
